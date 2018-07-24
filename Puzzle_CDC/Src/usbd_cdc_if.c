@@ -49,6 +49,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
+#include "cmd_parser.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -128,6 +129,9 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
 
+volatile uint8_t cmd_buf[256];
+volatile uint8_t cmd_idx;
+
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -183,6 +187,7 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
+	cmd_idx = 0;
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
@@ -291,6 +296,35 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+	
+	while(*Len--){
+		// cache up to 256 chars in circular buffer
+		cmd_buf[cmd_idx] = *Buf;
+		if(cmd_buf[cmd_idx] == '\n'){
+			
+			parse((char*)cmd_buf);
+			cmd_idx = 0; // reset after newline
+		}
+		Buf++;
+		cmd_idx++;
+	}
+//	if(*Len){
+//		
+//		// parse incoming data: if contains [\n]+
+//		uint8_t *p, *q;
+//		p = q = Buf;
+//		while(p < (Buf + *Len)){
+//			
+//			if(*p == '\n'){
+//				*p = '\0';
+//				parse( (char*) q );
+//				q = p+1;
+//			}
+//			p++;
+//		}
+//	}
+	
+	
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);

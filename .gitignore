@@ -17,6 +17,11 @@
 *.gch
 *.pch
 
+#zork
+/zork/
+
+/docs/ff*/
+
 # Libraries
 *.lib
 *.a
